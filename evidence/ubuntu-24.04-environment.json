@@ -1,0 +1,17 @@
+{
+  "guestKernel": "6.8.0-147-generic",
+  "cpuCount": 1,
+  "affinityCount": 1,
+  "totalMemoryKiB": 2009188,
+  "sourceCommit": "99381bee44b2e1b7618d1b55440b8350d4af06cf",
+  "trackedSourceClean": true,
+  "runnerSourcesMatchHead": {
+    "hub-backend/runner_main.py": true,
+    "hub-backend/app/services/runner_admission.py": true
+  },
+  "harnessSha256": "c924c0c84748951a3a612e6944c5d3e0d3abb4f7cc353ac4cca774281624f66b",
+  "nodeVersion": "v22.23.2",
+  "pythonVersion": "3.12.3",
+  "probeExitCode": 0,
+  "nodePiCliSha256": "8189b66abc4f9f431dbb70941dcba690d76d040de1fbfff212886be35a53639d"
+}

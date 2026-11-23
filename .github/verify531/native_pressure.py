@@ -52,22 +52,72 @@ def stop_load(children):
             child.wait(5)
 
 
-def pi_workers(node, cli, work):
-    """Identify only this run's real Node/Pi processes and their working directories."""
-    result = {}
-    for entry in Path("/proc").iterdir():
-        if not entry.name.isdecimal():
-            continue
-        try:
-            if (entry / "exe").resolve(strict=True) != node:
+def proc_identity(entry):
+    """Return PPid and start time (field 22), accounting for ')' inside comm."""
+    fields = (entry/"stat").read_text(encoding="utf-8", errors="replace").rsplit(") ",1)[1].split()
+    return int(fields[1]), int(fields[19])
+
+
+class PiObserver:
+    def __init__(self, node, cli, work, runner_pid, work_by_task):
+        self.node = str(node)
+        self.cli = os.fsencode(cli)
+        self.work = work
+        self.runner_key = (runner_pid, proc_identity(Path("/proc")/str(runner_pid))[1])
+        self.task_dirs = work_by_task
+        self.argv_seen = {}
+
+    def runner_ancestor(self, parent):
+        visited = set()
+        while parent > 1 and parent not in visited:
+            visited.add(parent)
+            grandparent, start = proc_identity(Path("/proc")/str(parent))
+            if (parent, start) == self.runner_key:
+                return True
+            parent = grandparent
+        return False
+
+    def sample(self):
+        """Use executable + PID birth time + cwd across Pi's process.title rename."""
+        live = {}
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdecimal():
                 continue
-            cwd = (entry / "cwd").resolve(strict=True)
-            argv = (entry / "cmdline").read_bytes().split(b"\0")
-            if cwd.is_relative_to(work) and os.fsencode(cli) in argv and b"--version" not in argv:
-                result[int(entry.name)] = cwd
-        except OSError:
-            continue
-    return result
+            try:
+                if os.readlink(entry/"exe") != self.node:
+                    continue
+                parent, birth = proc_identity(entry)
+                key = (int(entry.name),birth)
+                cwd = Path(os.readlink(entry/"cwd"))
+                if cwd == self.work or not cwd.is_relative_to(self.work):
+                    continue
+                argv = [a for a in (entry/"cmdline").read_bytes().split(bytes([0])) if a]
+                if self.cli in argv and b"--version" not in argv and self.runner_ancestor(parent):
+                    match = "exactCliArgv"
+                elif self.argv_seen.get(key)==cwd:
+                    match = "samePidStarttimeAndCwd"
+                elif (len(argv)==1 and argv[0].lower() in (b"pi",b"pi-rpc")
+                      and (entry/"comm").read_bytes().strip().lower() in (b"pi",b"pi-rpc")
+                      and cwd in self.task_dirs.values() and self.runner_ancestor(parent)):
+                    match = "piTitleVerifiedRunnerAncestorAndWorkspace"
+                else:
+                    continue
+                # A process may exit or exec while scanning. Revalidate immutable
+                # identity and links before retaining this specific observation.
+                if (proc_identity(entry)[1]!=birth or os.readlink(entry/"exe")!=self.node
+                        or os.readlink(entry/"cwd")!=str(cwd)):
+                    continue
+                if match=="exactCliArgv":
+                    self.argv_seen[key] = cwd
+                live[key] = (cwd,match)
+            except (OSError, ValueError, IndexError):
+                continue
+        return live
+
+    async def watch(self):
+        while True:
+            self.sample()
+            await asyncio.sleep(.04)
 
 
 async def host_samples(report):
@@ -194,8 +244,10 @@ async def run(args, root, report):
     storage._LOCAL_DIR = str(root / "objects")
     work = root / "work"
     work.mkdir()
-    pid_work = {}
     work_by_task = {}
+    evidence_by_request = []
+    observer = None
+    observing = None
     tasks = []
     attempts = []
     labels = ("A", "B")
@@ -214,8 +266,8 @@ async def run(args, root, report):
         check(len(hits) == 1, "model_task_marker_mismatch")
         tag = hits[0]
         tool_done = any(m.get("role") == "tool" for m in messages)
-        current = pi_workers(node, cli, work)
-        pid_work.update(current)
+        current = observer.sample() if observer is not None else {}
+        evidence_by_request.append((tag,current))
         report.data["modelRequests"].append({"task":tag,"afterTool":tool_done,"at":report.elapsed(),
                                              "observedPiCount":len(current)})
         await asyncio.sleep(5)
@@ -380,6 +432,9 @@ async def run(args, root, report):
             check(all(p.poll() is None for p in loads), "cpu_load_expired_before_release")
             report.data["checks"]["pressureQueuedBothApis"] = True
             report.stage("removing_cpu_load")
+            observer = PiObserver(node, cli, work, runner.pid, work_by_task)
+            observing = asyncio.create_task(observer.watch())
+            await asyncio.sleep(0)
             stop_load(loads)
             report.data["loadReleasedAt"] = report.elapsed()
             release_index = len(report.data["wire"])
@@ -397,13 +452,28 @@ async def run(args, root, report):
         with sqlite3.connect(dbfile) as con:
             stored = con.execute("SELECT task_id,ref,state,work_dir FROM automation_execution_session").fetchall()
         check(len(stored)==2, "unexpected_sqlite_session_count")
+        verified = {}
+        methods = {}
         for tag, tid, ref in zip(labels,tasks,from_ref):
             exact = [r for r in stored if r[:3]==(tid,ref,"done")]
             check(len(exact)==1, "sqlite_task_ref_mismatch")
             folder = Path(exact[0][3]).resolve()
             check(folder.is_relative_to(work) and work_by_task.get(tag)==folder,"workspace_identity_mismatch")
             check((folder/"dispatch-result.txt").read_text(encoding="utf-8")=="NATIVE531_DONE_"+tag,"file_content_mismatch")
-            check(folder in pid_work.values(), "pi_pid_not_observed_in_task_workspace")
+            owned = set()
+            per_task = [sample for request_tag,sample in evidence_by_request if request_tag==tag]
+            check(len(per_task)==2, "expected_two_model_requests_per_pi_task")
+            for sample in per_task:
+                matches = [(key, method) for key,(cwd,method) in sample.items() if cwd==folder]
+                check(len(matches)==1, "pi_process_not_uniquely_observed_in_task_workspace")
+                key, method = matches[0]
+                owned.add(key)
+                methods[method] = methods.get(method, 0)+1
+            check(len(owned)==1, "pi_process_changed_between_model_requests")
+            verified[tag] = next(iter(owned))
+        check(len(set(verified.values()))==2, "pi_process_reused_across_tasks")
+        report.data["piIdentityProof"] = {"pollIntervalMs":40,"rawArgvObservedForVerifiedProcesses":
+                sum(key in observer.argv_seen for key in verified.values()),"requestMatchMethods":methods}
         check(len(set(work_by_task.values()))==2,"workspace_collision")
         report.data["checks"]["sameTaskIdsRefsWorkspacesAfterRecovery"] = True
         records = (root/"runner.log").read_text(encoding="utf-8",errors="replace")
@@ -416,7 +486,7 @@ async def run(args, root, report):
         requests=report.data["modelRequests"]
         check([(r["task"],r["afterTool"]) for r in requests]==[("A",False),("A",True),("B",False),("B",True)],
               "unexpected_or_overlapping_pi_turns")
-        report.data.update(verifiedFiles=2, sqliteDoneSessions=2, acceptedLogs=2, distinctPiPids=len(pid_work))
+        report.data.update(verifiedFiles=2, sqliteDoneSessions=2, acceptedLogs=2, distinctPiPids=len(set(verified.values())))
         report.data["checks"]["twoIsolatedRealPiDeliveries"] = True
         data = report.data["hostProc"]
         hot_phases = ("applying_cpu_load","dispatch_under_pressure")
@@ -427,6 +497,12 @@ async def run(args, root, report):
               "independent_proc_did_not_confirm_recovery")
         report.data["checks"]["independentProcConfirmedLoadAndRecovery"] = True
     finally:
+        if observing is not None:
+            observing.cancel()
+            try:
+                await observing
+            except asyncio.CancelledError:
+                pass
         host_task.cancel()
         try:
             await host_task

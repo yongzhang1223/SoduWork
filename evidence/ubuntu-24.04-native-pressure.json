@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "stage": "complete",
+  "thresholdOverrides": false,
+  "samplerOverrides": false,
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "python": "3.12.3",
+  "wire": [
+    {
+      "op": "hello",
+      "cpuPercent": 100.0,
+      "memoryPercent": 24.0,
+      "memoryAvailableBytes": 1563222016,
+      "adaptiveLimit": 1,
+      "resourcePressure": "critical",
+      "resourceStartAllowed": false,
+      "queueDepth": 0,
+      "busy": 0,
+      "at": 10.983
+    },
+    {
+      "op": "beat",
+      "cpuPercent": 100.0,
+      "memoryPercent": 24.0,
+      "memoryAvailableBytes": 1563222016,
+      "adaptiveLimit": 1,
+      "resourcePressure": "critical",
+      "resourceStartAllowed": false,
+      "queueDepth": 0,
+      "busy": 0,
+      "at": 11.252
+    },
+    {
+      "op": "beat",
+      "cpuPercent": 6.2,
+      "memoryPercent": 24.2,
+      "memoryAvailableBytes": 1559269376,
+      "adaptiveLimit": 1,
+      "resourcePressure": "busy",
+      "resourceStartAllowed": true,
+      "queueDepth": 0,
+      "busy": 0,
+      "at": 31.124
+    },
+    {
+      "op": "beat",
+      "cpuPercent": 100.0,
+      "memoryPercent": 25.0,
+      "memoryAvailableBytes": 1543647232,
+      "adaptiveLimit": 1,
+      "resourcePressure": "critical",
+      "resourceStartAllowed": false,
+      "queueDepth": 0,
+      "busy": 0,
+      "at": 51.128
+    },
+    {
+      "op": "beat",
+      "cpuPercent": 100.0,
+      "memoryPercent": 25.0,
+      "memoryAvailableBytes": 1543761920,
+      "adaptiveLimit": 1,
+      "resourcePressure": "critical",
+      "resourceStartAllowed": false,
+      "queueDepth": 2,
+      "busy": 0,
+      "at": 71.132
+    },
+    {
+      "op": "beat",
+      "cpuPercent": 100.0,
+      "memoryPercent": 29.1,
+      "memoryAvailableBytes": 1458642944,
+      "adaptiveLimit": 1,
+      "resourcePressure": "critical",
+      "resourceStartAllowed": false,
+      "queueDepth": 0,
+      "busy": 1,
+      "at": 91.175
+    },
+    {
+      "op": "beat",
+      "cpuPercent": 13.3,
+      "memoryPercent": 25.7,
+      "memoryAvailableBytes": 1528172544,
+      "adaptiveLimit": 1,
+      "resourcePressure": "busy",
+      "resourceStartAllowed": true,
+      "queueDepth": 0,
+      "busy": 0,
+      "at": 111.179
+    }
+  ],
+  "api": {
+    "pressure": {
+      "at": 52.014,
+      "tasks": [
+        {
+          "task": "A",
+          "deviceState": "queued",
+          "deviceReason": "resource_pressure",
+          "deviceHasReason": true,
+          "devicePosition": 1,
+          "adminState": "queued",
+          "adminReason": "resource_pressure",
+          "adminHasReason": true,
+          "adminPosition": 1
+        },
+        {
+          "task": "B",
+          "deviceState": "queued",
+          "deviceReason": "resource_pressure",
+          "deviceHasReason": true,
+          "devicePosition": 2,
+          "adminState": "queued",
+          "adminReason": "resource_pressure",
+          "adminHasReason": true,
+          "adminPosition": 2
+        }
+      ]
+    },
+    "pressureRetained": {
+      "at": 71.503,
+      "tasks": [
+        {
+          "task": "A",
+          "deviceState": "queued",
+          "deviceReason": "resource_pressure",
+          "deviceHasReason": true,
+          "devicePosition": 1,
+          "adminState": "queued",
+          "adminReason": "resource_pressure",
+          "adminHasReason": true,
+          "adminPosition": 1
+        },
+        {
+          "task": "B",
+          "deviceState": "queued",
+          "deviceReason": "resource_pressure",
+          "deviceHasReason": true,
+          "devicePosition": 2,
+          "adminState": "queued",
+          "adminReason": "resource_pressure",
+          "adminHasReason": true,
+          "adminPosition": 2
+        }
+      ]
+    },
+    "slot": {
+      "at": 74.504,
+      "tasks": [
+        {
+          "task": "A",
+          "deviceState": "running",
+          "deviceReason": null,
+          "deviceHasReason": false,
+          "devicePosition": null,
+          "adminState": "running",
+          "adminReason": null,
+          "adminHasReason": false,
+          "adminPosition": null
+        },
+        {
+          "task": "B",
+          "deviceState": "queued",
+          "deviceReason": "execution_slot",
+          "deviceHasReason": true,
+          "devicePosition": 1,
+          "adminState": "queued",
+          "adminReason": "execution_slot",
+          "adminHasReason": true,
+          "adminPosition": 1
+        }
+      ]
+    },
+    "complete": {
+      "at": 102.887,
+      "tasks": [
+        {
+          "task": "A",
+          "deviceState": "done",
+          "deviceReason": null,
+          "deviceHasReason": false,
+          "devicePosition": null,
+          "adminState": "done",
+          "adminReason": null,
+          "adminHasReason": false,
+          "adminPosition": null
+        },
+        {
+          "task": "B",
+          "deviceState": "done",
+          "deviceReason": null,
+          "deviceHasReason": false,
+          "devicePosition": null,
+          "adminState": "done",
+          "adminReason": null,
+          "adminHasReason": false,
+          "adminPosition": null
+        }
+      ]
+    }
+  },
+  "checks": {
+    "initialHealthyHeartbeat": true,
+    "nativeCpuCriticalWithoutMemoryPressure": true,
+    "bothTasksRetainedUntilNextCriticalHeartbeat": true,
+    "pressureQueuedBothApis": true,
+    "realOccupiedSlotBothApis": true,
+    "terminalReasonsAbsentBothApis": true,
+    "nativeRecoveredHeartbeat": true,
+    "sameTaskIdsRefsWorkspacesAfterRecovery": true,
+    "bothAcceptedLogsMatchRefsAndPositions": true,
+    "twoIsolatedRealPiDeliveries": true,
+    "independentProcConfirmedLoadAndRecovery": true
+  },
+  "modelRequests": [
+    {
+      "task": "A",
+      "afterTool": false,
+      "at": 75.892,
+      "observedPiCount": 1
+    },
+    {
+      "task": "A",
+      "afterTool": true,
+      "at": 81.034,
+      "observedPiCount": 1
+    },
+    {
+      "task": "B",
+      "afterTool": false,
+      "at": 91.036,
+      "observedPiCount": 1
+    },
+    {
+      "task": "B",
+      "afterTool": true,
+      "at": 96.152,
+      "observedPiCount": 1
+    }
+  ],
+  "sourceCommit": "99381bee44b2e1b7618d1b55440b8350d4af06cf",
+  "node": "v22.23.2",
+  "pi": "1.4.0",
+  "cpuCount": 1,
+  "availableCpus": 1,
+  "modelFixture": "loopback OpenAI-compatible SSE, fixed 5 s per response",
+  "hostProc": {
+    "setup": {
+      "samples": 15,
+      "cpuPercentRange": [
+        27.78,
+        100.0
+      ],
+      "availableMiBRange": [
+        1490.7,
+        1560.3
+      ],
+      "lastAt": 11.187
+    },
+    "native_idle": {
+      "samples": 40,
+      "cpuPercentRange": [
+        2.08,
+        13.95
+      ],
+      "availableMiBRange": [
+        1487.0,
+        1487.1
+      ],
+      "lastAt": 31.269
+    },
+    "applying_cpu_load": {
+      "samples": 39,
+      "cpuPercentRange": [
+        85.29,
+        100.0
+      ],
+      "availableMiBRange": [
+        1464.2,
+        1475.5
+      ],
+      "lastAt": 50.848
+    },
+    "dispatch_under_pressure": {
+      "samples": 41,
+      "cpuPercentRange": [
+        100.0,
+        100.0
+      ],
+      "availableMiBRange": [
+        1472.1,
+        1472.2
+      ],
+      "lastAt": 71.427
+    },
+    "slot_after_native_recovery": {
+      "samples": 77,
+      "cpuPercentRange": [
+        6.52,
+        100.0
+      ],
+      "availableMiBRange": [
+        1373.3,
+        1472.4
+      ],
+      "lastAt": 110.801
+    }
+  },
+  "queuedCriticalHeartbeatAt": 71.132,
+  "loadReleasedAt": 71.514,
+  "pressureWorkersReaped": 1,
+  "piIdentityProof": {
+    "pollIntervalMs": 40,
+    "rawArgvObservedForVerifiedProcesses": 2,
+    "requestMatchMethods": {
+      "samePidStarttimeAndCwd": 4
+    }
+  },
+  "verifiedFiles": 2,
+  "sqliteDoneSessions": 2,
+  "acceptedLogs": 2,
+  "distinctPiPids": 2,
+  "runnerExit": 0
+}
