@@ -1,14 +1,14 @@
 name: Verify native CPU pressure and Pi for issue 531
 
 on:
-  push:
-    branches: [verify-531-native-pressure]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    if: github.ref == 'refs/heads/verify-531-native-pressure'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
